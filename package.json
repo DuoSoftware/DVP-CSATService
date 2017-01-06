@@ -1,0 +1,27 @@
+{
+  "name": "dvp-csatservice",
+  "version": "1.0.0",
+  "description": "csat service",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuoSoftware/DVP-CSATService.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DuoSoftware/DVP-CSATService/issues"
+  },
+  "homepage": "https://github.com/DuoSoftware/DVP-CSATService#readme",
+  "dependencies": {
+    "config": "^1.24.0",
+    "dvp-common": "^0.6.3",
+    "dvp-mongomodels": "^4.1.1",
+    "mongoose-unique-validator": "^1.0.3",
+    "restify": "^4.3.0",
+    "restify-jwt": "^0.4.0"
+  }
+}
