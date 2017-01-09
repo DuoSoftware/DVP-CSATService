@@ -674,7 +674,7 @@ server.put('/DVP/API/:version/CustomerSatisfaction/Request/:id/Satisfaction',aut
     return next();
 });
 
-server.get('/DVP/API/:version/CustomerSatisfactions/Counts',authorization({resource:"csat", action:"get"}), function(req, res, next) {
+server.get('/DVP/API/:version/CustomerSatisfactions/Report',authorization({resource:"csat", action:"get"}), function(req, res, next) {
 
 
     logger.info("DVP-CSATService.GetSatisfactionRequest Internal method ");
@@ -748,6 +748,66 @@ server.get('/DVP/API/:version/CustomerSatisfactions/Counts',authorization({resou
 
     return next();
 });
+
+server.get('/DVP/API/:version/CustomerSatisfactions/Count',authorization({resource:"csat", action:"get"}), function(req, res, next) {
+
+
+    logger.info("DVP-CSATService.GetSatisfactionRequest Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    var page = parseInt(req.params.Page),
+        size = parseInt(req.params.Size),
+        skip = page > 0 ? ((page - 1) * size) : 0;
+
+
+    var queryObject = {
+        company: company,
+        tenant: tenant
+    };
+
+    if(req.query['start'] && req.params['end']) {
+
+        queryObject.created_at =
+        {
+            "$gte": req.query['start'], "$lt": req.params['end']
+        }
+    }
+
+    if(req.query['requester']) {
+
+        queryObject.requester = mongoose.Types.ObjectId(req.query['requester']);
+    }
+
+    if(req.query['submitter']) {
+
+        queryObject.submitter = mongoose.Types.ObjectId(req.query['submitter']);
+    }
+
+
+    if(req.query['satisfaction']) {
+
+        queryObject.satisfaction = req.query['satisfaction'];
+    }
+
+
+    csat.count(queryObject,function (err, csat) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Fail to Find CSAT", false, undefined);
+        }
+        else {
+
+            jsonString = messageFormatter.FormatMessage(undefined, "CSAT Count found", true, csat);
+        }
+        res.end(jsonString);
+    });
+
+    return next();
+});
+
 
 
 
