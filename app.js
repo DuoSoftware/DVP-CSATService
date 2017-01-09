@@ -95,6 +95,7 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Request',authorization({reso
         }, function (err, ticket) {
             if (err) {
                 jsonString = messageFormatter.FormatMessage(err, "Fail to Find Ticket", false, undefined);
+                res.end(jsonString);
             }
             else {
                 if (ticket) {
@@ -184,7 +185,11 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission',authorization({r
             _id: req.body.ticket
         }, function (err, ticket) {
             if (err) {
+
+                logger.error("Failed to Find a Ticket", err)
+
                 jsonString = messageFormatter.FormatMessage(err, "Fail to Find Ticket", false, undefined);
+                res.end(jsonString);
             }
             else {
                 if (ticket) {
@@ -221,10 +226,11 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission',authorization({r
                     csatx.save(function (err, csat) {
                         if (err) {
                             jsonString = messageFormatter.FormatMessage(err, "CSAT create failed", false, undefined);
+                            logger.error("CSAT creation failed", err);
                         }
                         else {
                             jsonString = messageFormatter.FormatMessage(undefined, "CSAT saved successfully", true, csat);
-
+                            logger.info("CSAT submission created successfully");
 
                         }
                         res.end(jsonString);
@@ -234,6 +240,8 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission',authorization({r
 
                 }
                 else {
+
+                    logger.error("No ticket id found in body of the request");
                     jsonString = messageFormatter.FormatMessage(undefined, "Fail To Find Ticket with enough data", false, undefined);
                     res.end(jsonString);
                 }
@@ -266,6 +274,9 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
         var requester = req.body.requester;
         var submitter = req.body.submitter;
 
+        logger.info("Engagement:"+req.body.engagement+" Requester:"+requester + " Submitter:"+submitter);
+
+
         Ticket.findOne({
             company: company,
             tenant: tenant,
@@ -273,12 +284,109 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
             engagement_session: req.body.engagement
         }, function (err, ticket) {
             if (err) {
-                jsonString = messageFormatter.FormatMessage(err, "Fail to Find Ticket", false, undefined);
+
+                logger.error("Failed to find ticket", err)
+                User.findOne({username: submitter, company: company, tenant: tenant}, function (err, user) {
+                    if (err) {
+
+                        var csatx = csat({
+                            created_at: Date.now(),
+                            updated_at: Date.now(),
+                            company: company,
+                            tenant: tenant,
+                            method: req.body.method,
+                            requester: requester,
+                            submitter: submitter,
+                            satisfaction: req.body.satisfaction,
+                            comment: req.body.comment
+
+                        });
+
+
+                        csatx.save(function (err, csat) {
+                            if (err) {
+                                jsonString = messageFormatter.FormatMessage(err, "CSAT create failed", false, undefined);
+                                logger.error("CSAT submission failed", err);
+                            }
+                            else {
+                                jsonString = messageFormatter.FormatMessage(undefined, "CSAT saved successfully", true, csat);
+                                logger.info("CSAT submission created successfully");
+
+
+                            }
+                            res.end(jsonString);
+                        });
+
+                    }
+                    else {
+                        if (user) {
+
+                            var csatx = csat({
+                                created_at: Date.now(),
+                                updated_at: Date.now(),
+                                company: company,
+                                tenant: tenant,
+                                method: req.body.method,
+                                requester: requester,
+                                submitter: user._id,
+                                satisfaction: req.body.satisfaction,
+                                comment: req.body.comment
+
+                            });
+
+
+                            csatx.save(function (err, csat) {
+                                if (err) {
+
+                                    logger.error("CSAT submission failed", err);
+                                    jsonString = messageFormatter.FormatMessage(err, "CSAT create failed", false, undefined);
+                                }
+                                else {
+                                    jsonString = messageFormatter.FormatMessage(undefined, "CSAT saved successfully", true, csat);
+                                    logger.info("CSAT submission created successfully");
+
+
+                                }
+                                res.end(jsonString);
+                            });
+
+
+                        }
+                        else {
+                            var csatx = csat({
+                                created_at: Date.now(),
+                                updated_at: Date.now(),
+                                company: company,
+                                tenant: tenant,
+                                method: req.body.method,
+                                requester: requester,
+                                submitter: submitter,
+                                satisfaction: req.body.satisfaction,
+                                comment: req.body.comment
+
+                            });
+
+
+                            csatx.save(function (err, csat) {
+                                if (err) {
+                                    logger.error("CSAT submission failed", err);
+                                    jsonString = messageFormatter.FormatMessage(err, "CSAT create failed", false, undefined);
+                                }
+                                else {
+                                    jsonString = messageFormatter.FormatMessage(undefined, "CSAT saved successfully", true, csat);
+                                    logger.info("CSAT submission created successfully");
+
+
+                                }
+                                res.end(jsonString);
+                            });
+                        }
+                    }
+                });
             }
             else {
                 if (ticket) {
                     jsonString = messageFormatter.FormatMessage(undefined, "Found Ticket", true, ticket);
-
 
                     if(!requester) {
                         if (ticket.assignee) {
@@ -290,7 +398,6 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
                             requester = ticket.submitter;
                         }
                     }
-
 
                     var csatx = csat({
                         created_at: Date.now(),
@@ -306,24 +413,22 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
 
                     });
 
-
                     csatx.save(function (err, csat) {
                         if (err) {
+                            logger.error("CSAT submission failed", err);
                             jsonString = messageFormatter.FormatMessage(err, "CSAT create failed", false, undefined);
                         }
                         else {
                             jsonString = messageFormatter.FormatMessage(undefined, "CSAT saved successfully", true, csat);
+                            logger.info("CSAT submission created successfully");
 
 
                         }
                         res.end(jsonString);
                     });
 
-
-
                 }
                 else {
-
 
                     User.findOne({username: submitter, company: company, tenant: tenant}, function (err, user) {
                         if (err) {
@@ -345,9 +450,11 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
                             csatx.save(function (err, csat) {
                                 if (err) {
                                     jsonString = messageFormatter.FormatMessage(err, "CSAT create failed", false, undefined);
+                                    logger.error("CSAT submission failed", err);
                                 }
                                 else {
                                     jsonString = messageFormatter.FormatMessage(undefined, "CSAT saved successfully", true, csat);
+                                    logger.info("CSAT submission created successfully");
 
 
                                 }
@@ -374,10 +481,13 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
 
                                 csatx.save(function (err, csat) {
                                     if (err) {
+
+                                        logger.error("CSAT submission failed", err);
                                         jsonString = messageFormatter.FormatMessage(err, "CSAT create failed", false, undefined);
                                     }
                                     else {
                                         jsonString = messageFormatter.FormatMessage(undefined, "CSAT saved successfully", true, csat);
+                                        logger.info("CSAT submission created successfully");
 
 
                                     }
@@ -403,10 +513,12 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
 
                                 csatx.save(function (err, csat) {
                                     if (err) {
+                                        logger.error("CSAT submission failed", err);
                                         jsonString = messageFormatter.FormatMessage(err, "CSAT create failed", false, undefined);
                                     }
                                     else {
                                         jsonString = messageFormatter.FormatMessage(undefined, "CSAT saved successfully", true, csat);
+                                        logger.info("CSAT submission created successfully");
 
 
                                     }
@@ -417,8 +529,6 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
                     });
                 }
             }
-
-
         });
 
     }else{
@@ -564,6 +674,80 @@ server.put('/DVP/API/:version/CustomerSatisfaction/Request/:id/Satisfaction',aut
     return next();
 });
 
+server.get('/DVP/API/:version/CustomerSatisfactions/Counts',authorization({resource:"csat", action:"get"}), function(req, res, next) {
+
+
+    logger.info("DVP-CSATService.GetSatisfactionRequest Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    var page = parseInt(req.params.Page),
+        size = parseInt(req.params.Size),
+        skip = page > 0 ? ((page - 1) * size) : 0;
+
+
+    var queryObject = {
+        company: company,
+        tenant: tenant
+    };
+
+    if (req.query['start'] && req.params['end']) {
+
+
+        queryObject.created_at =
+        {
+            "$gte": req.query['start'], "$lt": req.params['end']
+        }
+
+    }
+
+    if (req.query['requester']) {
+
+        queryObject.requester = mongoose.Types.ObjectId(req.query['requester']);
+    }
+
+    if (req.query['submitter']) {
+
+        queryObject.submitter = mongoose.Types.ObjectId(req.query['submitter']);
+    }
+
+    /*
+     if(req.query['satisfaction']) {
+
+     queryObject.satisfaction = req.query['satisfaction'];
+     }
+     */
+
+    var aggregator = [{
+            $match: queryObject
+        },{
+            $group: {
+                _id: "$satisfaction",
+                satisfactions: {$sum: 1}
+            }
+        }
+    ];
+
+
+    csat.aggregate(aggregator, function (err, csat) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Fail to Find CSAT", false, undefined);
+        }
+        else {
+            if (csat) {
+                jsonString = messageFormatter.FormatMessage(undefined, "CSAT Found", true, csat);
+            }
+            else {
+                jsonString = messageFormatter.FormatMessage(undefined, "Fail To Find CSAT", false, undefined);
+            }
+        }
+        res.end(jsonString);
+    });
+
+    return next();
+});
 
 
 
