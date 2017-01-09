@@ -749,7 +749,7 @@ server.get('/DVP/API/:version/CustomerSatisfactions/Report',authorization({resou
     return next();
 });
 
-server.get('/DVP/API/:version/CustomerSatisfactions/Count',authorization({resource:"csat", action:"get"}), function(req, res, next) {
+server.get('/DVP/API/:version/CustomerSatisfactions/Count',authorization({resource:"csat", action:"read"}), function(req, res, next) {
 
 
     logger.info("DVP-CSATService.GetSatisfactionRequest Internal method ");
