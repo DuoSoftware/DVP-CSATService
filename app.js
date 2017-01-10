@@ -758,10 +758,6 @@ server.get('/DVP/API/:version/CustomerSatisfactions/Count',authorization({resour
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
-    var page = parseInt(req.params.Page),
-        size = parseInt(req.params.Size),
-        skip = page > 0 ? ((page - 1) * size) : 0;
-
 
     var queryObject = {
         company: company,
