@@ -590,12 +590,15 @@ server.get('/DVP/API/:version/CustomerSatisfactions/Request/:Page/:Size',authori
         tenant: tenant
     };
 
-    if(req.query['start'] && req.params['end']) {
+    if (req.query['start'] && req.params['end']) {
 
+
+        var start = new Date(req.query['start']);
+        var end = new Date(req.query['end']);
 
         queryObject.created_at =
         {
-            "$gte": req.query['start'], "$lt": req.params['end']
+            "$gte": start, "$lt": end
         }
 
     }
@@ -683,9 +686,7 @@ server.get('/DVP/API/:version/CustomerSatisfactions/Report',authorization({resou
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
-    var page = parseInt(req.params.Page),
-        size = parseInt(req.params.Size),
-        skip = page > 0 ? ((page - 1) * size) : 0;
+
 
 
     var queryObject = {
@@ -696,9 +697,12 @@ server.get('/DVP/API/:version/CustomerSatisfactions/Report',authorization({resou
     if (req.query['start'] && req.params['end']) {
 
 
+        var start = new Date(req.query['start']);
+        var end = new Date(req.query['end']);
+
         queryObject.created_at =
         {
-            "$gte": req.query['start'], "$lt": req.params['end']
+            "$gte": start, "$lt": end
         }
 
     }
@@ -731,13 +735,13 @@ server.get('/DVP/API/:version/CustomerSatisfactions/Report',authorization({resou
     ];
 
 
-    csat.aggregate(aggregator, function (err, csat) {
+    csat.aggregate(aggregator, function (err, csatx) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Fail to Find CSAT", false, undefined);
         }
         else {
-            if (csat) {
-                jsonString = messageFormatter.FormatMessage(undefined, "CSAT Found", true, csat);
+            if (csatx) {
+                jsonString = messageFormatter.FormatMessage(undefined, "CSAT Found", true, csatx);
             }
             else {
                 jsonString = messageFormatter.FormatMessage(undefined, "Fail To Find CSAT", false, undefined);
@@ -764,12 +768,17 @@ server.get('/DVP/API/:version/CustomerSatisfactions/Count',authorization({resour
         tenant: tenant
     };
 
-    if(req.query['start'] && req.params['end']) {
+    if (req.query['start'] && req.params['end']) {
+
+
+        var start = new Date(req.query['start']);
+        var end = new Date(req.query['end']);
 
         queryObject.created_at =
         {
-            "$gte": req.query['start'], "$lt": req.params['end']
+            "$gte": start, "$lt": end
         }
+
     }
 
     if(req.query['requester']) {
