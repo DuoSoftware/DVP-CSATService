@@ -430,7 +430,7 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
                 }
                 else {
 
-                    User.findOne({username: submitter, company: company, tenant: tenant}, function (err, user) {
+                    User.findOne({username: requester, company: company, tenant: tenant}, function (err, user) {
                         if (err) {
 
                             var csatx = csat({
@@ -471,8 +471,8 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
                                     company: company,
                                     tenant: tenant,
                                     method: req.body.method,
-                                    requester: requester,
-                                    submitter: user._id,
+                                    requester: user._id,
+                                    submitter: submitter,
                                     satisfaction: req.body.satisfaction,
                                     comment: req.body.comment
 
