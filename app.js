@@ -406,7 +406,7 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
                         tenant: tenant,
                         ticket: ticket._id,
                         method: req.body.method,
-                        requester: requester,
+                        requester: ticket.submitter,
                         submitter: ticket.requester,
                         satisfaction: req.body.satisfaction,
                         comment: req.body.comment
