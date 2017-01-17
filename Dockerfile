@@ -12,5 +12,5 @@ RUN git clone git://github.com/DuoSoftware/DVP-CSATService.git /usr/local/src/cs
 RUN cd /usr/local/src/csatservice;
 WORKDIR /usr/local/src/csatservice
 RUN npm install
-EXPOSE 8807
+EXPOSE 8885
 CMD [ "node", "/usr/local/src/csatservice/app.js" ]
