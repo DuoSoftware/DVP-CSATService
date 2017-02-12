@@ -19,7 +19,7 @@
   "dependencies": {
     "config": "^1.24.0",
     "dvp-common": "^0.6.3",
-    "dvp-mongomodels": "^4.4.0",
+    "dvp-mongomodels": "^4.4.1",
     "mongoose-unique-validator": "^1.0.3",
     "restify": "^4.3.0",
     "restify-jwt": "^0.4.0"
