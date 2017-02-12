@@ -123,6 +123,7 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Request',authorization({reso
                         method: req.body.method,
                         requester: requester,
                         submitter: ticket.requester,
+                        contact: req.body.contact
 
                     });
 
@@ -218,7 +219,8 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission',authorization({r
                         requester: requester,
                         submitter: ticket.requester,
                         satisfaction: req.body.satisfaction,
-                        comment: req.body.comment
+                        comment: req.body.comment,
+                        contact: req.body.contact
 
                     });
 
@@ -298,7 +300,8 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
                             requester: requester,
                             submitter: submitter,
                             satisfaction: req.body.satisfaction,
-                            comment: req.body.comment
+                            comment: req.body.comment,
+                            contact: req.body.contact
 
                         });
 
@@ -330,7 +333,8 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
                                 requester: requester,
                                 submitter: user._id,
                                 satisfaction: req.body.satisfaction,
-                                comment: req.body.comment
+                                comment: req.body.comment,
+                                contact: req.body.contact
 
                             });
 
@@ -362,7 +366,8 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
                                 requester: requester,
                                 submitter: submitter,
                                 satisfaction: req.body.satisfaction,
-                                comment: req.body.comment
+                                comment: req.body.comment,
+                                contact: req.body.contact
 
                             });
 
@@ -409,7 +414,8 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
                         requester: ticket.submitter,
                         submitter: ticket.requester,
                         satisfaction: req.body.satisfaction,
-                        comment: req.body.comment
+                        comment: req.body.comment,
+                        contact: req.body.contact
 
                     });
 
@@ -442,7 +448,8 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
                                 requester: requester,
                                 submitter: submitter,
                                 satisfaction: req.body.satisfaction,
-                                comment: req.body.comment
+                                comment: req.body.comment,
+                                contact: req.body.contact
 
                             });
 
@@ -474,7 +481,8 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
                                     requester: user._id,
                                     submitter: submitter,
                                     satisfaction: req.body.satisfaction,
-                                    comment: req.body.comment
+                                    comment: req.body.comment,
+                                    contact: req.body.contact
 
                                 });
 
@@ -506,7 +514,8 @@ server.post('/DVP/API/:version/CustomerSatisfaction/Submission/ByEngagement',aut
                                     requester: requester,
                                     submitter: submitter,
                                     satisfaction: req.body.satisfaction,
-                                    comment: req.body.comment
+                                    comment: req.body.comment,
+                                    contact: req.body.contact
 
                                 });
 
