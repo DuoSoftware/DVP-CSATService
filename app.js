@@ -636,7 +636,7 @@ server.get('/DVP/API/:version/CustomerSatisfaction/Request/:id',authorization({r
         company: company,
         tenant: tenant,
         _id: req.params.id
-    }).populate('requester', 'username').populate('submitter', 'name').populate('ticket', 'reference').exec(function (err, csat) {
+    }).populate('requester', 'username').populate('submitter', 'name firstname lastname').populate('ticket', 'reference').exec(function (err, csat) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Fail to Find CSAT", false, undefined);
         }
@@ -704,7 +704,7 @@ server.get('/DVP/API/:version/CustomerSatisfactions/Request/:Page/:Size',authori
 
 
 
-    csat.find(queryObject).populate('requester', 'username').populate('submitter', 'name').populate('ticket', 'reference').skip(skip)
+    csat.find(queryObject).populate('requester', 'username').populate('submitter', 'name firstname lastname').populate('ticket', 'reference').skip(skip)
         .limit(size).sort({created_at: -1}).exec(function (err, csat) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Fail to Find CSAT", false, undefined);
