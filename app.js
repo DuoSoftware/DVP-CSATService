@@ -79,6 +79,7 @@ var connectionstring = '';
 mongoip = mongoip.split(',');
 if(util.isArray(mongoip)){
 
+     if(mongoip.length > 1){ 
     mongoip.forEach(function(item){
         connectionstring += util.format('%s:%d,',item,mongoport)
     });
@@ -89,9 +90,14 @@ if(util.isArray(mongoip)){
     if(mongoreplicaset){
         connectionstring = util.format('%s?replicaSet=%s',connectionstring,mongoreplicaset) ;
     }
+     }
+    else
+    {
+        connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip[0],mongoport,mongodb);
+    }
 }else{
 
-    connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodb)
+    connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodb);
 }
 
 
