@@ -8,7 +8,8 @@
 #EXPOSE 8807
 
 FROM node:5.10.0
-RUN git clone git://github.com/DuoSoftware/DVP-CSATService.git /usr/local/src/csatservice
+ARG VERSION_TAG
+RUN git clone -b $VERSION_TAG https://github.com/DuoSoftware/DVP-CSATService.git /usr/local/src/csatservice
 RUN cd /usr/local/src/csatservice;
 WORKDIR /usr/local/src/csatservice
 RUN npm install
