@@ -17,11 +17,16 @@
   },
   "homepage": "https://github.com/DuoSoftware/DVP-CSATService#readme",
   "dependencies": {
+    "bluebird": "^3.5.0",
     "config": "^1.24.0",
     "dvp-common": "^0.6.3",
     "dvp-mongomodels": "^4.4.2",
+    "json2csv": "^3.7.3",
+    "moment": "^2.18.1",
     "mongoose-unique-validator": "^1.0.3",
+    "request": "^2.81.0",
     "restify": "^4.3.0",
-    "restify-jwt": "^0.4.0"
+    "restify-jwt": "^0.4.0",
+    "validator": "^7.1.0"
   }
 }
