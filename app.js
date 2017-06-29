@@ -721,7 +721,7 @@ server.post('/DVP/API/:version/CustomerSatisfactions/Request/:Page/:Size',author
 
 
 
-    csat.find(queryObject).populate('requester', 'username').populate('submitter', 'name').populate('ticket', 'reference').skip(skip)
+    csat.find(queryObject).populate('requester', 'username').populate('submitter', 'name firstname lastname').populate('ticket', 'reference').skip(skip)
         .limit(size).sort({created_at: -1}).exec(function (err, csat) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Fail to Find CSAT", false, undefined);
@@ -861,7 +861,7 @@ server.post('/DVP/API/:version/CustomerSatisfactions/Request/Download',authoriza
                             logger.debug('[DVP-CSATService.GetSatisfactionRequestDownload] - API RESPONSE : %s', jsonString);
                             res.end(jsonString);
 
-                            csat.find(queryObject).populate('requester', 'username').populate('submitter', 'name').populate('ticket', 'reference')
+                            csat.find(queryObject).populate('requester', 'username').populate('submitter', 'name firstname lastname').populate('ticket', 'reference')
                                 .sort({created_at: -1}).lean().exec(function (err, csat) {
                                     if (err) {
                                         externalApi.DeleteFile(uniqueId, company, tenant, function(err, delData){
