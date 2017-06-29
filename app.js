@@ -788,6 +788,8 @@ server.post('/DVP/API/:version/CustomerSatisfactions/Request/Download',authoriza
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
+    var tz = req.query.tz;
+
 
     var queryObject = {
         company: company,
@@ -884,7 +886,7 @@ server.post('/DVP/API/:version/CustomerSatisfactions/Request/Download',authoriza
                                                 csvObj.contact = csatObj.contact ? csatObj.contact: 'Unknown';
                                                 csvObj.ticketRef = csatObj.ticket ? csatObj.ticket.reference: '';
                                                 csvObj.comment = csatObj.comment;
-                                                csvObj.formattedDate = moment(csatObj.created_at).format('DD-MM-YYYY, HH:mm');
+                                                csvObj.formattedDate = moment(csatObj.created_at).utcOffset(tz).format('DD-MM-YYYY, HH:mm');
 
                                                 csvList.push(csvObj);
 
