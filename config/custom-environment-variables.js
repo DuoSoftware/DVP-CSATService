@@ -9,6 +9,15 @@ module.exports = {
         "replicaset" :"SYS_MONGO_REPLICASETNAME"
     },
 
+    "Services":
+    {
+
+        "fileServiceHost": "SYS_FILESERVICE_HOST",
+        "fileServicePort": "SYS_FILESERVICE_PORT",
+        "fileServiceVersion":"SYS_FILESERVICE_VERSION"
+
+    },
+
 
     "Redis":
     {
@@ -41,7 +50,8 @@ module.exports = {
         "ip": "LB_FRONTEND",
         "port": "LB_PORT"
 
-    }
+    },
+    "Token": "HOST_TOKEN"
 };
 
 //NODE_CONFIG_DIR

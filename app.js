@@ -11,6 +11,10 @@ var jwt = require('restify-jwt');
 var secret = require('dvp-common/Authentication/Secret.js');
 var authorization = require('dvp-common/Authentication/Authorization.js');
 var util = require('util');
+var Promise = require('bluebird');
+var moment = require('moment');
+var json2csv = require('json2csv');
+var fs = require('fs');
 var port = config.Host.port || 3000;
 var host = config.Host.vdomain || 'localhost';
 var Ticket = require('dvp-mongomodels/model/Ticket').Ticket;
@@ -18,6 +22,7 @@ var mongoose = require('mongoose');
 var csat = require('dvp-mongomodels/model/CustomerSatisfaction').CustomerSatisfaction;
 var User = require('dvp-mongomodels/model/User');
 var externalUser = require('dvp-mongomodels/model/ExternalUser').ExternalUser;
+var externalApi = require('./ExternalApiAccess.js');
 
 
 var server = restify.createServer({
@@ -661,7 +666,7 @@ server.get('/DVP/API/:version/CustomerSatisfaction/Request/:id',authorization({r
     return next();
 });
 
-server.get('/DVP/API/:version/CustomerSatisfactions/Request/:Page/:Size',authorization({resource:"csat", action:"read"}), function(req, res, next) {
+server.post('/DVP/API/:version/CustomerSatisfactions/Request/:Page/:Size',authorization({resource:"csat", action:"read"}), function(req, res, next) {
 
 
     logger.info("DVP-CSATService.GetSatisfactionRequest Internal method ");
@@ -709,6 +714,11 @@ server.get('/DVP/API/:version/CustomerSatisfactions/Request/:Page/:Size',authori
         queryObject.satisfaction = req.query['satisfaction'];
     }
 
+    if(req.body && req.body.agentFilter)
+    {
+        queryObject.requester = { $in : req.body.agentFilter }
+    }
+
 
 
     csat.find(queryObject).populate('requester', 'username').populate('submitter', 'name firstname lastname').populate('ticket', 'reference').skip(skip)
@@ -726,6 +736,252 @@ server.get('/DVP/API/:version/CustomerSatisfactions/Request/:Page/:Size',authori
         }
         res.end(jsonString);
     });
+
+    return next();
+});
+
+var fileCheckAndDelete = function(filename, companyId, tenantId)
+{
+    return new Promise(function(fulfill, reject)
+    {
+        externalApi.RemoteGetFileMetadata(filename, companyId, tenantId, function(err, fileData)
+        {
+            if(fileData)
+            {
+                externalApi.DeleteFile(fileData.UniqueId, companyId, tenantId, function (err, delResp)
+                {
+                    if (err)
+                    {
+                        reject(err);
+
+                    }
+                    else
+                    {
+                        fulfill(true);
+                    }
+
+                });
+            }
+            else
+            {
+                if(err)
+                {
+                    reject(err);
+                }
+                else
+                {
+                    fulfill(true);
+                }
+            }
+        })
+
+    })
+
+};
+
+server.post('/DVP/API/:version/CustomerSatisfactions/Request/Download',authorization({resource:"csat", action:"read"}), function(req, res, next) {
+
+
+    logger.info("DVP-CSATService.GetSatisfactionRequestDownload Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    var tz = req.query.tz;
+
+
+    var queryObject = {
+        company: company,
+        tenant: tenant
+    };
+
+    if (req.query['start'] && req.params['end']) {
+
+
+        var start = new Date(req.query['start']);
+        var end = new Date(req.query['end']);
+
+        queryObject.created_at =
+        {
+            "$gte": start, "$lt": end
+        }
+
+    }
+
+    if(req.query['requester']) {
+
+        queryObject.requester = mongoose.Types.ObjectId(req.query['requester']);
+    }
+
+    if(req.query['submitter']) {
+
+        queryObject.submitter = mongoose.Types.ObjectId(req.query['submitter']);
+    }
+
+
+    if(req.query['satisfaction']) {
+
+        queryObject.satisfaction = req.query['satisfaction'];
+    }
+
+    if(req.body && req.body.agentFilter)
+    {
+        queryObject.requester = { $in : req.body.agentFilter }
+    }
+
+    var dateTimestampSD = moment(start).unix();
+    var dateTimestampED = moment(end).unix();
+
+    var fileName = 'CSAT_' + tenant + '_' + company + '_' + dateTimestampSD + '_' + dateTimestampED;
+
+    fileName = fileName.replace(/:/g, "-") + '.csv';
+
+    fileCheckAndDelete(fileName, company, tenant)
+        .then(function(chkResult)
+        {
+            if(chkResult)
+            {
+                externalApi.FileUploadReserve(fileName, company, tenant, function(err, fileResResp)
+                {
+                    if (err)
+                    {
+                        var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+                        logger.debug('[DVP-CSATService.GetSatisfactionRequestDownload] - API RESPONSE : %s', jsonString);
+                        res.end(jsonString);
+                    }
+                    else
+                    {
+                        if(fileResResp)
+                        {
+                            var uniqueId = fileResResp;
+
+                            //should respose end
+                            var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                            logger.debug('[DVP-CSATService.GetSatisfactionRequestDownload] - API RESPONSE : %s', jsonString);
+                            res.end(jsonString);
+
+                            csat.find(queryObject).populate('requester', 'username').populate('submitter', 'name firstname lastname').populate('ticket', 'reference')
+                                .sort({created_at: -1}).lean().exec(function (err, csat) {
+                                    if (err) {
+                                        externalApi.DeleteFile(uniqueId, company, tenant, function(err, delData){
+                                            if(err)
+                                            {
+                                                logger.error('[DVP-CSATService.GetSatisfactionRequestDownload] - Delete Failed : %s', err);
+                                            }
+                                        });
+                                    }
+                                    else {
+                                        if(csat && csat.length > 0)
+                                        {
+                                            var csvList = [];
+                                            csat.forEach(function(csatObj)
+                                            {
+                                                var csvObj = {};
+
+                                                csvObj.satisfaction = csatObj.satisfaction;
+                                                csvObj.method = csatObj.method;
+                                                csvObj.submitterFullname = csatObj.submitter ? csatObj.submitter.firstname + ' ' + csatObj.submitter.lastname: 'Unknown';
+                                                csvObj.requesterName = csatObj.requester ? csatObj.requester.username: 'Unknown';
+                                                csvObj.contact = csatObj.contact ? csatObj.contact: 'Unknown';
+                                                csvObj.ticketRef = csatObj.ticket ? csatObj.ticket.reference: '';
+                                                csvObj.comment = csatObj.comment;
+                                                csvObj.formattedDate = moment(csatObj.created_at).utcOffset(tz).format('DD-MM-YYYY, HH:mm');
+
+                                                csvList.push(csvObj);
+
+                                            });
+
+                                            //Convert to CSV
+
+                                            var fieldNames = ['Satisfaction', 'Method', 'Submitter', 'Requester', 'Contact', 'Ticket', 'Comment', 'Created At'];
+
+                                            var fields = ['satisfaction', 'method', 'submitterFullname', 'requesterName', 'contact', 'ticketRef', 'comment', 'formattedDate'];
+
+                                            var csvFileData = json2csv({ data: csvList, fields: fields, fieldNames : fieldNames });
+
+                                            fs.writeFile(fileName, csvFileData, function(err)
+                                            {
+                                                if (err)
+                                                {
+                                                    externalApi.DeleteFile(uniqueId, company, tenant, function(err, delData){
+                                                        if(err)
+                                                        {
+                                                            logger.error('[DVP-CSATService.GetSatisfactionRequestDownload] - Delete Failed : %s', err);
+                                                        }
+                                                    });
+                                                    //can delete file
+                                                    //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                }
+                                                else
+                                                {
+                                                    externalApi.UploadFile(uniqueId, fileName, company, tenant, function(err, uploadResp)
+                                                    {
+                                                        fs.unlink(fileName);
+                                                        if(!err && uploadResp)
+                                                        {
+
+                                                        }
+                                                        else
+                                                        {
+                                                            externalApi.DeleteFile(uniqueId, company, tenant, function(err, delData){
+                                                                if(err)
+                                                                {
+                                                                    logger.error('[DVP-CSATService.GetSatisfactionRequestDownload] - Delete Failed : %s', err);
+                                                                }
+                                                            });
+
+                                                        }
+
+                                                    });
+
+                                                }
+                                            });
+
+
+                                        }
+                                        else
+                                        {
+                                            externalApi.DeleteFile(uniqueId, company, tenant, function(err, delData){
+                                                if(err)
+                                                {
+                                                    logger.error('[DVP-CSATService.GetSatisfactionRequestDownload] - Delete Failed : %s', err);
+                                                }
+                                            });
+                                        }
+                                    }
+                                });
+
+
+                        }
+                        else
+                        {
+                            var jsonString = messageFormatter.FormatMessage(new Error('Failed to reserve file'), "ERROR", false, null);
+                            logger.debug('[DVP-CSATService.GetSatisfactionRequestDownload] - [%s] - API RESPONSE : %s', jsonString);
+                            res.end(jsonString);
+                        }
+
+
+
+
+                    }
+                });
+            }
+            else
+            {
+                var jsonString = messageFormatter.FormatMessage(new Error('Error deleting file'), "ERROR", false, null);
+                logger.debug('[DVP-CSATService.GetSatisfactionRequestDownload] - [%s] - API RESPONSE : %s', jsonString);
+                res.end(jsonString);
+            }
+        })
+        .catch(function(err)
+        {
+            var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+            logger.debug('[DVP-CSATService.GetSatisfactionRequestDownload] - API RESPONSE : %s', jsonString);
+            res.end(jsonString);
+        });
+
+
 
     return next();
 });
@@ -767,7 +1023,7 @@ server.put('/DVP/API/:version/CustomerSatisfaction/Request/:id/Satisfaction',aut
     return next();
 });
 
-server.get('/DVP/API/:version/CustomerSatisfactions/Report',authorization({resource:"csat", action:"read"}), function(req, res, next) {
+server.post('/DVP/API/:version/CustomerSatisfactions/Report',authorization({resource:"csat", action:"read"}), function(req, res, next) {
 
 
     logger.info("DVP-CSATService.GetSatisfactionRequest Internal method ");
@@ -807,6 +1063,11 @@ server.get('/DVP/API/:version/CustomerSatisfactions/Report',authorization({resou
         queryObject.submitter = mongoose.Types.ObjectId(req.query['submitter']);
     }
 
+    if(req.body && req.body.agentFilter)
+    {
+        queryObject.requester = { "$in" : req.body.agentFilter.map(function(id){ return new mongoose.Types.ObjectId(id); }) }
+    }
+
     /*
      if(req.query['satisfaction']) {
 
@@ -843,7 +1104,7 @@ server.get('/DVP/API/:version/CustomerSatisfactions/Report',authorization({resou
     return next();
 });
 
-server.get('/DVP/API/:version/CustomerSatisfactions/Count',authorization({resource:"csat", action:"read"}), function(req, res, next) {
+server.post('/DVP/API/:version/CustomerSatisfactions/Count',authorization({resource:"csat", action:"read"}), function(req, res, next) {
 
 
     logger.info("DVP-CSATService.GetSatisfactionRequest Internal method ");
@@ -885,6 +1146,11 @@ server.get('/DVP/API/:version/CustomerSatisfactions/Count',authorization({resour
     if(req.query['satisfaction']) {
 
         queryObject.satisfaction = req.query['satisfaction'];
+    }
+
+    if(req.body && req.body.agentFilter)
+    {
+        queryObject.requester = { $in : req.body.agentFilter }
     }
 
 
