@@ -8,7 +8,7 @@ module.exports = {
         "dbname":"",
         "password":"",
         "user":"",
-        "replicaset" :""
+        "type": "mongodb+srv"
     },
 
     "Services":
