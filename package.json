@@ -20,6 +20,7 @@
     "bluebird": "^3.5.0",
     "config": "^1.24.0",
     "dvp-common": "^1.2.0",
+    "dvp-common-lite": "^1.1.0",
     "dvp-mongomodels": "^6.1.0",
     "json2csv": "^3.7.3",
     "moment": "^2.18.1",
